@@ -59,7 +59,7 @@ return (
     <div className={style.subwellcome}>  
       <h1>Discover and Register for existing tech event
          workshops bootcamps hosted by NITDA HUB 
-        henhance your skills and connect with
+        enhance your skills and connect with
         your fellow tech enthusiasts </h1>
     </div>
     <button className={style.explore} onClick={handlescrolltobottom} >explore event</button>

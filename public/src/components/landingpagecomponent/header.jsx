@@ -16,8 +16,8 @@ return(
           <Image src="/logo.png" alt="" width={20} height={20} style={{background:"rgba(159, 118, 216, 80)"}}/>
           <h6 className={style.logofont}>NIHUB Events </h6>
        </div>
-        <div className={style.explore}>
-        <button className={style.logofont} onClick={handledmin}> {info}</button>
+        <div className= "">
+         
         </div>
   </div>
   )  

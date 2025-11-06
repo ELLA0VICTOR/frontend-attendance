@@ -1,119 +1,132 @@
-"use client"
-import { useEffect } from "react";
-import axios from "axios";
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import api from "@/utils/api"; // your axios instance
 import Header from "@/public/src/components/RegistrationPageComponents/header";
-import style from "./Registration.module.css"
-import { useRouter, useSearchParams  } from "next/navigation";
-import { useState } from "react"
 import Input from "@/public/src/components/RegistrationPageComponents/forminput";
-import Trackchoice from "@/public/src/components/RegistrationPageComponents/Trackchoice";
+import style from "./Registration.module.css";
 
+const Registration = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const Programid = searchParams.get("Programid");
 
-const Registration=()=>{
+  // Form states
+  const [fullname, setFullname] = useState("");
+  const [matricnumber, setMatricnumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [gender, setGender] = useState("");
+  const [photo, setPhoto] = useState(null);
 
- const Navigation=useRouter()
- const searchParams = useSearchParams()
- const Programid = searchParams.get('Programid');
+  // Feedback and loading
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-// In other to store URL parameter to send each program to its own end point.
-const [Query, SetQuery] = useState(null);
+  // Go back
+  const handleGoBack = () => router.push("./");
 
-useEffect(() => {
- if (Programid) {
-   SetQuery(Programid);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    // Validate required fields
+    if (!fullname || !matricnumber || !email || !department || !gender || !photo) {
+      setError("Please fill in all required fields.");
+      return;
     }
-},[Programid]);
 
-    const [fullname, setfullname]=useState("")
-    const [matricnumber, setmatricnumber]=useState("")
-    const [email, setemail]=useState("")
-    const [department, setdepartment]=useState("")
-    const [gender, setgender]=useState("")
-    const [track, settrack]=useState("")
-    const [photo, setphoto]=useState("")
-    const [Error, seterror]=useState("")
-    const [success, setsuccess]=useState("")
-    const [loading, setloading]=useState(false)
+    const formData = new FormData();
+    formData.append("fullname", fullname);
+    formData.append("matricnumber", matricnumber);
+    formData.append("email", email);
+    formData.append("department", department);
+    formData.append("gender", gender);
+    formData.append("photo", photo);
+    formData.append("eventId", Programid); // link to the event
 
-const handlegoback=()=>{
-Navigation.push("./")
- }
+    try {
+      setLoading(true);
 
- //To send  all the students information to thier specific event they register for
-const Handlesubmit= async (event) =>{
- event.preventDefault();
- setloading(true)
- if(!fullname || !matricnumber || !email || !department || !gender || !track || !photo){
- seterror("Please fill in all required fields.")
- setsuccess("")
- setloading(false)
- return;
- }
-    
-const formdata=new FormData();
-    formdata.append("fullname", fullname)
-    formdata.append("matricnumber", matricnumber)
-    formdata.append("email", email)
-    formdata.append("department", department)
-    formdata.append("gender", gender)
-    formdata.append("track", track)
-    formdata.append("photo", photo) 
+      await api.post("/participants/register", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-try{    
- const response=await axios.post(`BACKEND-URL/${Programid}`, formdata, {
-    headers: {
-             "Content-Type": "multipart/form-data"
-             }  
- });
- setsuccess("Registration successful!")
- seterror("")  
- setloading(false)  
- return    
-  }catch(error){
-        seterror("Registration failed. Please try again.")
-        setsuccess("")
-        setloading(false)
-        return;
-  }  
-}       
+      setSuccess("Registration successful!");
+      setError("");
 
-return(
- <div>
-  <div className={style.Header}>
-   <Header/>
-  </div>
-  <button className={style.backbotton} onClick={handlegoback}>Back to Events</button>  
-  <div className={style.container}>
-    <h3 className={style.title}>Event Registration</h3>
-    <h3 className={style.subtitle}>Please fill in your details to register for this event </h3>
-    <form>
-     <Input type="text" label="Fullname" value={fullname} setValue={setfullname}/>
-     <Input type="text" label="Matric number" value={matricnumber} setValue={setmatricnumber}/>
-     <Input type="email" label="Email" value={email} setValue={setemail}/>
-     <Input type="text" label="Department" value={department} setValue={setdepartment}/>  
-     <label className={style.title}>
-      Gender
-     </label>
-    <div className={style.subtitle}>
-      <select style={{border:"none", outline:"none"}} value={gender} onChange={(event) => setgender(event.target.value)}>
-      <option value="">Select Gender</option>
-      <option className={style.title} value="male">Male</option>
-      <option  className={style.title} value="female">Female</option>
-      </select>
+      // Reset form
+      setFullname("");
+      setMatricnumber("");
+      setEmail("");
+      setDepartment("");
+      setGender("");
+      setPhoto(null);
+    } catch (err) {
+      console.error(err);
+      setError("Registration failed. Please try again.");
+      setSuccess("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className={style.Header}>
+        <Header />
+      </div>
+
+      <button className={style.backbotton} onClick={handleGoBack}>
+        Back to Events
+      </button>
+
+      <div className={style.container}>
+        <h3 className={style.title}>Event Registration</h3>
+        <h3 className={style.subtitle}>
+          Please fill in your details to register for this event
+        </h3>
+
+        <form onSubmit={handleSubmit}>
+          <Input type="text" label="Fullname" value={fullname} setValue={setFullname} />
+          <Input type="text" label="Matric number" value={matricnumber} setValue={setMatricnumber} />
+          <Input type="email" label="Email" value={email} setValue={setEmail} />
+          <Input type="text" label="Department" value={department} setValue={setDepartment} />
+
+          <label className={style.title}>Gender</label>
+          <div className={style.subtitle}>
+            <select
+              style={{ border: "none", outline: "none" }}
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+
+          <label className={style.title}>Upload your Passport Photograph</label>
+          <div className={style.subtitle}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files[0])}
+            />
+          </div>
+
+          <button type="submit" className={style.submitbutton}>
+            {!loading ? "Register" : "Please wait..."}
+          </button>
+
+          {error && <p className={style.error}>{error}</p>}
+          {success && <p className={style.success}>{success}</p>}
+        </form>
+      </div>
     </div>
-                                                                    
-      <Trackchoice label="Select your Track" value={track} setValue={settrack} BACKendURl={`BACKenURL/${Query}`}/>
-        <label className={style.title}>Upload your Passport Photograph</label>
-         <div className={style.subtitle}>
-         <input type="file" accept="image/*" onChange={(event) => setphoto(event.target.files[0])}/> 
-         </div>
-        <button className={style.submitbutton} onClick={Handlesubmit}>{!loading ?"Register": "please wait..."}</button>
-        {Error && <p className={style.error}>{Error}</p>}
-        {success && <p className={style.success}>{success}</p>}     
-         </form>
-         </div>
-         </div>
+  );
+};
 
-    )
-}
 export default Registration;
