@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useContext, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -8,11 +8,13 @@ import Header from "@/public/src/components/AddEventPageComponents/header"
 import Scroll from "@/public/src/components/scroll"
 import { Rolecontex } from "@/public/src/components/AdminLoginpageComponents/Admincontex"
 
+
 const AddEvent = () => {
   const Navigation = useRouter()
   const { Role } = useContext(Rolecontex)
   
   const [button, setbutton] = useState("create")
+  const [isMobile, setIsMobile] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -29,6 +31,7 @@ const AddEvent = () => {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
+  
 
   const tracks = [
     { id: "web-app", name: "Web and App" },
@@ -41,6 +44,20 @@ const AddEvent = () => {
     if (!isAuthenticated() || !isAdmin()) {
       Navigation.push("/AdminLogin")
     }
+    
+    // Handle window resize for mobile detection
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    // Set initial value
+    handleResize()
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize)
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const handleInputChange = (field, value) => {
@@ -235,7 +252,7 @@ const AddEvent = () => {
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            <span style={{ display: window.innerWidth < 480 ? 'none' : 'inline' }}>Logout</span>
+            <span style={{ display: isMobile ? 'none' : 'inline' }}>Logout</span>
           </button>
         </div>
       </div>
@@ -349,14 +366,14 @@ const AddEvent = () => {
           <div style={{ 
             backgroundColor: "#FFFFFF", 
             borderRadius: "10px", 
-            padding: window.innerWidth < 768 ? "24px" : "36px",
+            padding: isMobile ? "24px" : "36px",
             border: "1px solid #E2E8F0",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)"
           }}>
             {/* Form Header */}
             <div style={{ marginBottom: "32px" }}>
               <h2 style={{ 
-                fontSize: window.innerWidth < 768 ? "18px" : "20px", 
+                fontSize: isMobile ? "18px" : "20px", 
                 fontWeight: "700", 
                 marginBottom: "4px", 
                 color: "#0F172A", 
@@ -379,7 +396,7 @@ const AddEvent = () => {
               {/* Row 1: Title & Start Date */}
               <div style={{ 
                 display: "grid", 
-                gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", 
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
                 gap: "20px", 
                 marginBottom: "20px" 
               }}>
@@ -487,7 +504,7 @@ const AddEvent = () => {
               {/* Row 2: Location & Max Participants */}
               <div style={{ 
                 display: "grid", 
-                gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", 
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
                 gap: "20px", 
                 marginBottom: "20px" 
               }}>
@@ -560,7 +577,7 @@ const AddEvent = () => {
               {/* Row 3: Duration & End Date */}
               <div style={{ 
                 display: "grid", 
-                gridTemplateColumns: window.innerWidth < 768 ? "1fr" : "1fr 1fr", 
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
                 gap: "20px", 
                 marginBottom: "20px" 
               }}>
@@ -778,7 +795,7 @@ const AddEvent = () => {
                   type="submit"
                   disabled={loading}
                   style={{
-                    width: window.innerWidth < 768 ? "100%" : "auto",
+                    width: isMobile ? "100%" : "auto",
                     padding: "9px 16px",
                     backgroundColor: loading ? "#94A3B8" : "#6B46C1",
                     color: "#FFFFFF",
