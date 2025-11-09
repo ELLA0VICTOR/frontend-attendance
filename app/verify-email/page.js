@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/utils/api";
 import { setAuth } from "@/utils/auth";
 
-const VerifyEmail = () => {
+// Create a separate component that uses useSearchParams
+const VerifyEmailContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -201,6 +202,29 @@ const VerifyEmail = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Main component that wraps content in Suspense
+const VerifyEmail = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center border border-purple-100">
+            <div className="mb-6">
+              <div className="mx-auto w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              Loading...
+            </h2>
+            <p className="text-gray-600">Please wait...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   );
 };
 
