@@ -1,12 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/utils/api"; // your axios instance
 import Header from "@/public/src/components/RegistrationPageComponents/header";
 import Input from "@/public/src/components/RegistrationPageComponents/forminput";
 import style from "./Registration.module.css";
 
-const Registration = () => {
+// Create a separate component for the form that uses useSearchParams
+const RegistrationForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const Programid = searchParams.get("Programid");
@@ -126,6 +127,26 @@ const Registration = () => {
         </form>
       </div>
     </div>
+  );
+};
+
+// Main component that wraps the form in Suspense
+const Registration = () => {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        fontSize: '16px',
+        color: '#666'
+      }}>
+        Loading registration form...
+      </div>
+    }>
+      <RegistrationForm />
+    </Suspense>
   );
 };
 
