@@ -17,8 +17,10 @@ const RegistrationForm = () => {
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
   const [gender, setGender] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [participantType, setParticipantType] = useState("student");
 
   // Feedback and loading
   const [error, setError] = useState("");
@@ -42,9 +44,19 @@ const RegistrationForm = () => {
         setTimeout(() => setError(""), 4000);
         return;
       }
+      if (!file.type.startsWith('image/')) {
+        setError("Please upload a valid image file");
+        setTimeout(() => setError(""), 4000);
+        return;
+      }
       setPhoto(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?\d{3}[\s-]?\d{4,}$/;
+    return phoneRegex.test(phone);
   };
 
   const handleSubmit = async (e) => {
@@ -52,21 +64,37 @@ const RegistrationForm = () => {
     setError("");
     setSuccess("");
 
-    // Validate required fields
-    if (!fullname || !matricnumber || !email || !department || !gender || !photo) {
-      setError("Please fill in all required fields.");
-      setTimeout(() => setError(""), 4000);
+    // Validate based on participant type
+    if (participantType === "student") {
+      if (!fullname || !matricnumber || !email || !department || !gender || !phoneNumber || !photo) {
+        setError("Please fill in all required fields for student registration.");
+        setTimeout(() => setError(""), 4000);
+        return;
+      }
+    } else {
+      if (!fullname || !email || !gender || !phoneNumber || !photo) {
+        setError("Please fill in all required fields (Name, Email, Gender, Phone, Photo).");
+        setTimeout(() => setError(""), 4000);
+        return;
+      }
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError("Please enter a valid phone number (e.g., +2348012345678 or 08012345678)");
+      setTimeout(() => setError(""), 5000);
       return;
     }
 
     const formData = new FormData();
     formData.append("fullname", fullname);
-    formData.append("matricnumber", matricnumber);
     formData.append("email", email);
-    formData.append("department", department);
     formData.append("gender", gender);
+    formData.append("phoneNumber", phoneNumber);
     formData.append("photo", photo);
     formData.append("eventId", Programid);
+
+    if (matricnumber) formData.append("matricnumber", matricnumber);
+    if (department) formData.append("department", department);
 
     try {
       setLoading(true);
@@ -75,7 +103,7 @@ const RegistrationForm = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSuccess("Registration successful! You're all set for the event.");
+      setSuccess("Registration successful! You're all set for the event. Check your email for QR code.");
       setError("");
 
       // Reset form
@@ -84,13 +112,14 @@ const RegistrationForm = () => {
       setEmail("");
       setDepartment("");
       setGender("");
+      setPhoneNumber("");
       setPhoto(null);
       setPhotoPreview(null);
+      setParticipantType("student");
 
-      // Redirect after 2 seconds
       setTimeout(() => {
         router.push("./");
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || "Registration failed. Please try again.";
@@ -218,6 +247,84 @@ const RegistrationForm = () => {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {/* Participant Type Selection */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "10px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
+                I am registering as <span style={{ color: "#DC2626" }}>*</span>
+              </label>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                gap: "12px" 
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setParticipantType("student")}
+                  style={{
+                    padding: "14px",
+                    border: participantType === "student" ? "2px solid #6B46C1" : "2px solid #E2E8F0",
+                    borderRadius: "8px",
+                    backgroundColor: participantType === "student" ? "#F3F0FF" : "#FFFFFF",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      border: participantType === "student" ? "5px solid #6B46C1" : "2px solid #CBD5E1",
+                      transition: "all 0.2s ease"
+                    }}></div>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: "600", color: "#0F172A" }}>Student</div>
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                        With matric number & department
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParticipantType("non-student")}
+                  style={{
+                    padding: "14px",
+                    border: participantType === "non-student" ? "2px solid #6B46C1" : "2px solid #E2E8F0",
+                    borderRadius: "8px",
+                    backgroundColor: participantType === "non-student" ? "#F3F0FF" : "#FFFFFF",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      border: participantType === "non-student" ? "5px solid #6B46C1" : "2px solid #CBD5E1",
+                      transition: "all 0.2s ease"
+                    }}></div>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: "600", color: "#0F172A" }}>General Public</div>
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                        Non-student registration
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Full Name */}
             <div style={{ marginBottom: "20px" }}>
               <label style={{ 
@@ -239,116 +346,230 @@ const RegistrationForm = () => {
               />
             </div>
 
-            {/* Matric Number & Email */}
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-              gap: "20px", 
-              marginBottom: "20px" 
-            }}>
-              <div>
-                <label style={{ 
-                  display: "block", 
-                  fontSize: "13px", 
-                  fontWeight: "600", 
-                  marginBottom: "8px", 
-                  color: "#0F172A", 
-                  letterSpacing: "-0.01em" 
+            {/* Conditional Fields Based on Type */}
+            {participantType === "student" ? (
+              <>
+                {/* Matric Number & Email */}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
                 }}>
-                  Matric Number <span style={{ color: "#DC2626" }}>*</span>
-                </label>
-                <Input 
-                  type="text" 
-                  label="" 
-                  value={matricnumber} 
-                  setValue={setMatricnumber}
-                  placeholder="e.g., 2020/1/12345"
-                />
-              </div>
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Matric Number <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={matricnumber} 
+                      setValue={setMatricnumber}
+                      placeholder="e.g., 2020/1/12345"
+                    />
+                  </div>
 
-              <div>
-                <label style={{ 
-                  display: "block", 
-                  fontSize: "13px", 
-                  fontWeight: "600", 
-                  marginBottom: "8px", 
-                  color: "#0F172A", 
-                  letterSpacing: "-0.01em" 
-                }}>
-                  Email Address <span style={{ color: "#DC2626" }}>*</span>
-                </label>
-                <Input 
-                  type="email" 
-                  label="" 
-                  value={email} 
-                  setValue={setEmail}
-                  placeholder="your.email@example.com"
-                />
-              </div>
-            </div>
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Email Address <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="email" 
+                      label="" 
+                      value={email} 
+                      setValue={setEmail}
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+                </div>
 
-            {/* Department & Gender */}
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-              gap: "20px", 
-              marginBottom: "20px" 
-            }}>
-              <div>
-                <label style={{ 
-                  display: "block", 
-                  fontSize: "13px", 
-                  fontWeight: "600", 
-                  marginBottom: "8px", 
-                  color: "#0F172A", 
-                  letterSpacing: "-0.01em" 
+                {/* Department & Phone */}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
                 }}>
-                  Department <span style={{ color: "#DC2626" }}>*</span>
-                </label>
-                <Input 
-                  type="text" 
-                  label="" 
-                  value={department} 
-                  setValue={setDepartment}
-                  placeholder="e.g., Computer Science"
-                />
-              </div>
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Department <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={department} 
+                      setValue={setDepartment}
+                      placeholder="e.g., Computer Science"
+                    />
+                  </div>
 
-              <div>
-                <label style={{ 
-                  display: "block", 
-                  fontSize: "13px", 
-                  fontWeight: "600", 
-                  marginBottom: "8px", 
-                  color: "#0F172A", 
-                  letterSpacing: "-0.01em" 
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Phone Number <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="tel" 
+                      label="" 
+                      value={phoneNumber} 
+                      setValue={setPhoneNumber}
+                      placeholder="+2348012345678"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Email & Phone for Non-Students */}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
                 }}>
-                  Gender <span style={{ color: "#DC2626" }}>*</span>
-                </label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    outline: "none",
-                    backgroundColor: "#FFFFFF",
-                    fontFamily: "inherit",
-                    color: gender ? "#0F172A" : "#94A3B8",
-                    fontWeight: "500",
-                    transition: "all 0.15s ease",
-                    cursor: "pointer"
-                  }}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Email Address <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="email" 
+                      label="" 
+                      value={email} 
+                      setValue={setEmail}
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
+                      Phone Number <span style={{ color: "#DC2626" }}>*</span>
+                    </label>
+                    <Input 
+                      type="tel" 
+                      label="" 
+                      value={phoneNumber} 
+                      setValue={setPhoneNumber}
+                      placeholder="+2348012345678"
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Student Fields */}
+                <div style={{
+                  padding: "14px",
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "6px",
+                  marginBottom: "20px",
+                  border: "1px solid #E2E8F0"
+                }}>
+                  <p style={{ 
+                    fontSize: "12px", 
+                    color: "#64748B", 
+                    margin: "0 0 10px 0",
+                    fontWeight: "500"
+                  }}>
+                    Optional: If you are a student, you can provide these details
+                  </p>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                    gap: "14px"
+                  }}>
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={matricnumber} 
+                      setValue={setMatricnumber}
+                      placeholder="Matric Number (optional)"
+                    />
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={department} 
+                      setValue={setDepartment}
+                      placeholder="Department (optional)"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Gender */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "8px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
+                Gender <span style={{ color: "#DC2626" }}>*</span>
+              </label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  outline: "none",
+                  backgroundColor: "#FFFFFF",
+                  fontFamily: "inherit",
+                  color: gender ? "#0F172A" : "#94A3B8",
+                  fontWeight: "500",
+                  transition: "all 0.15s ease",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
             </div>
 
             {/* Photo Upload */}
@@ -586,7 +807,6 @@ const RegistrationForm = () => {
               <span>{error}</span>
             </div>
           )}
-          
           {/* Success Message */}
           {success && (
             <div style={{
