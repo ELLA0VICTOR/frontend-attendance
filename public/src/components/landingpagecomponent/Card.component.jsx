@@ -165,7 +165,9 @@ const EventRegistration = () => {
       width: '100%'
     }}>
       {activeEvents.map(event => {
-        const imageUrl = getImageUrl(event.imageUrl);
+        // ===== THIS IS THE ONLY CHANGE I MADE =====
+        const imageUrl = event.eventImage;
+        // ===========================================
         const hasFailedImage = failedImages.has(event._id);
 
         return (
