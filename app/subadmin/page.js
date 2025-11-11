@@ -25,6 +25,9 @@ const SubAdmin = () => {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState({})
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [resetPasswordModal, setResetPasswordModal] = useState(false)
+  const [selectedAdmin, setSelectedAdmin] = useState(null)
+  const [resetPasswordForm, setResetPasswordForm] = useState({ newPassword: "" })
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768)
@@ -93,6 +96,36 @@ const SubAdmin = () => {
     }
   }
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault()
+    
+    if (!resetPasswordForm.newPassword || resetPasswordForm.newPassword.length < 8) {
+      setError("Password must be at least 8 characters")
+      setTimeout(() => setError(""), 4000)
+      return
+    }
+  
+    setActionLoading(prev => ({ ...prev, resetPassword: true }))
+    try {
+      await api.put(`/users/${selectedAdmin._id}/reset-password`, {
+        newPassword: resetPasswordForm.newPassword
+      })
+      
+      setSuccess(`Password reset successfully for ${selectedAdmin.name}. Credentials sent to their email.`)
+      setTimeout(() => setSuccess(""), 5000)
+      
+      setResetPasswordModal(false)
+      setSelectedAdmin(null)
+      setResetPasswordForm({ newPassword: "" })
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || "Failed to reset password"
+      setError(errorMsg)
+      setTimeout(() => setError(""), 5000)
+    } finally {
+      setActionLoading(prev => ({ ...prev, resetPassword: false }))
+    }
+  }
+
   const handleDeleteAdmin = async (adminId) => {
     if (deleteConfirm !== adminId) {
       setDeleteConfirm(adminId)
@@ -139,6 +172,7 @@ const SubAdmin = () => {
 
       <Header info="Admins" />
       
+      {/* Top Bar */}
       <div style={{ padding: isMobile ? "20px 16px" : "20px 48px", backgroundColor: "#FFFFFF", borderBottom: "1px solid #E2E8F0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: "1400px", margin: "0 auto", flexWrap: "wrap", gap: "12px" }}>
           <div>
@@ -185,6 +219,7 @@ const SubAdmin = () => {
         </div>
       </div>
 
+      {/* Navigation Tabs */}
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
         <div style={{ display: "flex", gap: "0", marginTop: "0", borderBottom: "1px solid #E2E8F0", backgroundColor: "#FFFFFF", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {[
@@ -222,7 +257,9 @@ const SubAdmin = () => {
         </div>
       </div>
 
+      {/* Main Content */}
       <div style={{ maxWidth: "1400px", margin: isMobile ? "24px auto" : "40px auto", padding: isMobile ? "0 16px" : "0 48px" }}>
+        {/* Create Admin Button */}
         <div style={{ marginBottom: "28px" }}>
           <button
             onClick={() => setShowModal(true)}
@@ -252,6 +289,7 @@ const SubAdmin = () => {
           </button>
         </div>
 
+        {/* Admins List */}
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "10px", padding: isMobile ? "24px" : "36px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)" }}>
           <h2 style={{ fontSize: isMobile ? "18px" : "20px", fontWeight: "700", marginBottom: "24px", color: "#0F172A", letterSpacing: "-0.02em" }}>
             Admins ({admins.length})
@@ -301,41 +339,67 @@ const SubAdmin = () => {
                           {admin.role}
                         </span>
                       </div>
+
                       {admin.role !== "superadmin" && (
-                        <button
-                          onClick={() => handleDeleteAdmin(admin._id)}
-                          disabled={actionLoading[admin._id]}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            backgroundColor: deleteConfirm === admin._id ? "#B91C1C" : "#DC2626",
-                            color: "#FFFFFF",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontSize: "12px",
-                            cursor: actionLoading[admin._id] ? "not-allowed" : "pointer",
-                            fontWeight: "700",
-                            transition: "all 0.15s ease",
-                            letterSpacing: "-0.01em"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!actionLoading[admin._id]) e.currentTarget.style.backgroundColor = "#B91C1C"
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!actionLoading[admin._id]) {
-                              e.currentTarget.style.backgroundColor = deleteConfirm === admin._id ? "#B91C1C" : "#DC2626"
-                            }
-                          }}
-                        >
-                          {actionLoading[admin._id] ? "..." : (deleteConfirm === admin._id ? "Confirm?" : "Delete")}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              setSelectedAdmin(admin)
+                              setResetPasswordModal(true)
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              backgroundColor: "#6B46C1",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              cursor: "pointer",
+                              fontWeight: "700",
+                              transition: "all 0.15s ease",
+                              letterSpacing: "-0.01em",
+                              marginRight: "6px",
+                              marginBottom: "6px"
+                            }}
+                          >
+                            Reset PWD
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAdmin(admin._id)}
+                            disabled={actionLoading[admin._id]}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              backgroundColor: deleteConfirm === admin._id ? "#B91C1C" : "#DC2626",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              cursor: actionLoading[admin._id] ? "not-allowed" : "pointer",
+                              fontWeight: "700",
+                              transition: "all 0.15s ease",
+                              letterSpacing: "-0.01em"
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!actionLoading[admin._id])
+                                e.currentTarget.style.backgroundColor = "#B91C1C"
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!actionLoading[admin._id]) {
+                                e.currentTarget.style.backgroundColor = deleteConfirm === admin._id ? "#B91C1C" : "#DC2626"
+                              }
+                            }}
+                          >
+                            {actionLoading[admin._id] ? "..." : deleteConfirm === admin._id ? "Confirm?" : "Delete"}
+                          </button>
+                        </>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <div>
-                  <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 1fr 1fr", padding: "12px 16px", backgroundColor: "#F8FAFC", borderRadius: "6px 6px 0 0", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr 1fr 1.5fr", padding: "12px 16px", backgroundColor: "#F8FAFC", borderRadius: "6px 6px 0 0", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     <div>Name</div>
                     <div>Email</div>
                     <div>Role</div>
@@ -346,7 +410,7 @@ const SubAdmin = () => {
                     {admins.map((admin) => (
                       <div 
                         key={admin._id}
-                        style={{ display: "grid", gridTemplateColumns: "2fr 3fr 1fr 1fr", padding: "14px 16px", borderBottom: "1px solid #F1F5F9", fontSize: "13px", alignItems: "center" }}
+                        style={{ display: "grid", gridTemplateColumns: "2fr 3fr 1fr 1.5fr", padding: "14px 16px", borderBottom: "1px solid #F1F5F9", fontSize: "13px", alignItems: "center" }}
                       >
                         <div style={{ color: "#0F172A", fontWeight: "700", letterSpacing: "-0.01em" }}>
                           {admin.name}
@@ -368,34 +432,58 @@ const SubAdmin = () => {
                             {admin.role}
                           </span>
                         </div>
-                        <div>
+                        <div style={{ display: "flex", gap: "8px" }}>
                           {admin.role !== "superadmin" && (
-                            <button
-                              onClick={() => handleDeleteAdmin(admin._id)}
-                              disabled={actionLoading[admin._id]}
-                              style={{
-                                padding: "6px 12px",
-                                backgroundColor: deleteConfirm === admin._id ? "#B91C1C" : "#DC2626",
-                                color: "#FFFFFF",
-                                border: "none",
-                                borderRadius: "4px",
-                                fontSize: "12px",
-                                cursor: actionLoading[admin._id] ? "not-allowed" : "pointer",
-                                fontWeight: "700",
-                                transition: "all 0.15s ease",
-                                letterSpacing: "-0.01em"
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!actionLoading[admin._id]) e.currentTarget.style.backgroundColor = "#B91C1C"
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!actionLoading[admin._id]) {
-                                  e.currentTarget.style.backgroundColor = deleteConfirm === admin._id ? "#B91C1C" : "#DC2626"
-                                }
-                              }}
-                            >
-                              {actionLoading[admin._id] ? "..." : (deleteConfirm === admin._id ? "Confirm?" : "Delete")}
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedAdmin(admin)
+                                  setResetPasswordModal(true)
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  backgroundColor: "#6B46C1",
+                                  color: "#FFFFFF",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                  cursor: "pointer",
+                                  fontWeight: "700",
+                                  transition: "all 0.15s ease",
+                                  letterSpacing: "-0.01em"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#5B3BA1"}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#6B46C1"}
+                              >
+                                Reset PWD
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAdmin(admin._id)}
+                                disabled={actionLoading[admin._id]}
+                                style={{
+                                  padding: "6px 12px",
+                                  backgroundColor: deleteConfirm === admin._id ? "#B91C1C" : "#DC2626",
+                                  color: "#FFFFFF",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                  cursor: actionLoading[admin._id] ? "not-allowed" : "pointer",
+                                  fontWeight: "700",
+                                  transition: "all 0.15s ease",
+                                  letterSpacing: "-0.01em"
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!actionLoading[admin._id]) e.currentTarget.style.backgroundColor = "#B91C1C"
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!actionLoading[admin._id]) {
+                                    e.currentTarget.style.backgroundColor = deleteConfirm === admin._id ? "#B91C1C" : "#DC2626"
+                                  }
+                                }}
+                              >
+                                {actionLoading[admin._id] ? "..." : (deleteConfirm === admin._id ? "Confirm?" : "Delete")}
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -407,6 +495,7 @@ const SubAdmin = () => {
           )}
         </div>
 
+        {/* Error and Success Messages */}
         {error && (
           <div style={{
             marginTop: "20px",
@@ -437,6 +526,7 @@ const SubAdmin = () => {
         )}
       </div>
 
+      {/* Create Admin Modal */}
       {showModal && (
         <div style={{
           position: "fixed",
@@ -604,6 +694,137 @@ const SubAdmin = () => {
                   }}
                 >
                   {actionLoading.create ? "Creating..." : "Create Admin"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "20px",
+          backdropFilter: "blur(4px)"
+        }} onClick={() => setResetPasswordModal(false)}>
+          <div style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: "10px",
+            padding: isMobile ? "24px" : "32px",
+            maxWidth: "500px",
+            width: "100%",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <h3 style={{ fontSize: isMobile ? "18px" : "20px", fontWeight: "700", color: "#0F172A", margin: 0, letterSpacing: "-0.01em" }}>
+                Reset Password
+              </h3>
+              <button
+                onClick={() => setResetPasswordModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#64748B",
+                  lineHeight: "1",
+                  padding: 0,
+                  fontWeight: "600"
+                }}
+              >
+                ×
+              </button>
+            </div>
+      
+            <p style={{ color: "#64748B", fontSize: "14px", marginBottom: "20px" }}>
+              Set a new password for <strong style={{ color: "#0F172A" }}>{selectedAdmin?.name}</strong>
+            </p>
+      
+            <form onSubmit={handleResetPassword}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                  New Password <span style={{ color: "#DC2626" }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  value={resetPasswordForm.newPassword}
+                  onChange={(e) => setResetPasswordForm({ newPassword: e.target.value })}
+                  placeholder="Minimum 8 characters"
+                  required
+                  minLength={8}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    outline: "none",
+                    fontFamily: "inherit",
+                    color: "#0F172A",
+                    fontWeight: "500"
+                  }}
+                />
+                <small style={{ color: "#64748B", fontSize: "12px", display: "block", marginTop: "6px", fontWeight: "500" }}>
+                  New password will be emailed to the admin
+                </small>
+              </div>
+      
+              <div style={{ display: "flex", gap: "8px", marginTop: "24px", borderTop: "1px solid #E2E8F0", paddingTop: "20px" }}>
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    backgroundColor: "#F8FAFC",
+                    color: "#0F172A",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    letterSpacing: "-0.01em"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F1F5F9"}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#F8FAFC"}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading.resetPassword}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    backgroundColor: "#6B46C1",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: actionLoading.resetPassword ? "not-allowed" : "pointer",
+                    transition: "all 0.15s ease",
+                    letterSpacing: "-0.01em"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!actionLoading.resetPassword) e.currentTarget.style.backgroundColor = "#5B3BA1"
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!actionLoading.resetPassword) e.currentTarget.style.backgroundColor = "#6B46C1"
+                  }}
+                >
+                  {actionLoading.resetPassword ? "Resetting..." : "Reset Password"}
                 </button>
               </div>
             </form>

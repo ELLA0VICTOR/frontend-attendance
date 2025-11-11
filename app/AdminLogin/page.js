@@ -232,6 +232,17 @@ const AdminLogin = () => {
                 </button>
               </div>
             </div>
+            {/* ADD THIS SECTION - Forgot Password Link */}
+            <div className="flex items-center justify-end mb-2">
+              <button
+              type="button"
+              onClick={() => router.push("/ForgotPassword")}
+              className="text-sm font-medium text-purple-700 hover:text-purple-800 transition-colors"
+              >
+                Forgot password?
+                </button>
+            </div>
+
 
             {/* Error message */}
             {error && (
