@@ -47,11 +47,18 @@ api.interceptors.response.use(
 
 /**
  * Helper function to construct proper image URLs
- * @param {string} imagePath - Path from database (e.g., "/uploads/photo-123.jpg")
- * @returns {string|null} - Full URL to access the image
+ * @param {string} imagePath - Path from database (e.g., "/uploads/photo-123.jpg") or Base64 data URI
+ * @returns {string|null} - Full URL to access the image or the Base64 data URI
  */
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
+  
+  // ===== NEW: Handle Base64 data URIs =====
+  // If it's a Base64 data URI, return as is
+  if (imagePath.startsWith('data:image/')) {
+    return imagePath;
+  }
+  // ========================================
   
   // If it's already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {

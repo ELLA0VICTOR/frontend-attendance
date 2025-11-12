@@ -1,6 +1,5 @@
 "use client"
 import { useEffect } from "react"
-import { getImageUrl } from "@/utils/api"
 
 const VerificationModal = ({ 
   isOpen, 
@@ -26,7 +25,10 @@ const VerificationModal = ({
   if (!isOpen || !participant) return null
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const imageUrl = getImageUrl(participant.photo)
+  
+  // ===== FIX: Use photo directly as it's already a Base64 data URI =====
+  const imageUrl = participant.photo // This is already "data:image/jpeg;base64,..."
+  // ====================================================================
 
   return (
     <div
@@ -179,7 +181,7 @@ const VerificationModal = ({
                       display: "block"
                     }}
                     onError={(e) => {
-                      console.error('Image failed to load:', imageUrl);
+                      console.error('Image failed to load');
                       e.target.style.display = 'none';
                       const fallback = e.target.nextSibling;
                       if (fallback) fallback.style.display = 'flex';
