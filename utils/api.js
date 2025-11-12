@@ -3,9 +3,6 @@ import { getToken, logout } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// Extract base URL without /api for static files
-const BASE_URL = API_URL.replace(/\/api$/, '');
-
 // Create axios instance
 const api = axios.create({
   baseURL: API_URL,
@@ -34,7 +31,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - logout
       logout();
       if (typeof window !== 'undefined') {
         window.location.href = '/AdminLogin';
@@ -45,24 +41,38 @@ api.interceptors.response.use(
 );
 
 /**
- * Helper function to construct proper image URLs
- * @param {string} imagePath - Path from database (e.g., "/uploads/photo-123.jpg")
- * @returns {string|null} - Full URL to access the image
+ * Helper function to convert File to Base64
+ * @param {File} file - File object from input
+ * @returns {Promise<string>} - Base64 data URI
  */
-export const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
+export const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Helper function to validate image data
+ * Images from API are now Base64 strings, so no URL construction needed
+ * @param {string} imageData - Base64 string or URL
+ * @returns {string|null} - The image data if valid, null otherwise
+ */
+export const getImageUrl = (imageData) => {
+  if (!imageData) return null;
   
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+  // If it's already a Base64 data URI or external URL, return as is
+  if (imageData.startsWith('data:') || 
+      imageData.startsWith('http://') || 
+      imageData.startsWith('https://')) {
+    return imageData;
   }
   
-  // Normalize path (ensure it starts with /)
-  const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-  
-  // Use BASE_URL (without /api) for static files
-  return `${BASE_URL}${normalizedPath}`;
+  // If it's somehow still a path (legacy data), return null
+  return null;
 };
 
 export default api;
-export { API_URL, BASE_URL };
+export { API_URL };
