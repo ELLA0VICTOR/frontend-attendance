@@ -1,9 +1,9 @@
 "use client"
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import api, { getImageUrl } from "@/utils/api";
+import api from "@/utils/api";
 
-// Custom SVG Icons - Professional & Minimal
+// Custom SVG Icons
 const CalendarIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -29,24 +29,103 @@ const UsersIcon = () => (
   </svg>
 );
 
+// Cache manager
+const CACHE_KEY = 'nihub_events_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedEvents = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    
+    const { data, timestamp } = JSON.parse(cached);
+    const now = Date.now();
+    
+    // Check if cache is still valid
+    if (now - timestamp < CACHE_DURATION) {
+      return data;
+    }
+    
+    // Cache expired
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  } catch (error) {
+    console.error('Error reading cache:', error);
+    return null;
+  }
+};
+
+const setCachedEvents = (data) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const cacheData = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+  } catch (error) {
+    console.error('Error setting cache:', error);
+  }
+};
+
 const EventRegistration = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [failedImages, setFailedImages] = useState(new Set());
+  const [imageLoadStates, setImageLoadStates] = useState({});
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        // Check cache first
+        const cachedData = getCachedEvents();
+        
+        if (cachedData) {
+          console.log('Loading events from cache');
+          setEvents(cachedData);
+          setLoading(false);
+          
+          // Initialize image load states
+          const initialStates = {};
+          cachedData.forEach(event => {
+            initialStates[event._id] = { loaded: false, error: false };
+          });
+          setImageLoadStates(initialStates);
+          
+          // Still fetch in background to update cache
+          try {
+            const res = await api.get("/events");
+            const ev = res?.data?.data?.events ?? [];
+            setCachedEvents(ev);
+            setEvents(ev);
+          } catch (err) {
+            console.error('Background refresh failed:', err);
+          }
+          
+          return;
+        }
+        
+        // No cache, fetch normally
         setLoading(true);
         const res = await api.get("/events");
         const ev = res?.data?.data?.events ?? [];
+        
         setEvents(ev);
+        setCachedEvents(ev);
         setError(null);
+        
+        // Initialize image load states
+        const initialStates = {};
+        ev.forEach(event => {
+          initialStates[event._id] = { loaded: false, error: false };
+        });
+        setImageLoadStates(initialStates);
+        
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching events:", err.response?.data ?? err.message);
         setError(err);
-      } finally {
         setLoading(false);
       }
     };
@@ -54,8 +133,18 @@ const EventRegistration = () => {
     fetchEvents();
   }, []);
 
+  const handleImageLoad = (eventId) => {
+    setImageLoadStates(prev => ({
+      ...prev,
+      [eventId]: { loaded: true, error: false }
+    }));
+  };
+
   const handleImageError = (eventId) => {
-    setFailedImages(prev => new Set(prev).add(eventId));
+    setImageLoadStates(prev => ({
+      ...prev,
+      [eventId]: { loaded: true, error: true }
+    }));
   };
 
   if (loading) {
@@ -165,10 +254,9 @@ const EventRegistration = () => {
       width: '100%'
     }}>
       {activeEvents.map(event => {
-        // ===== THIS IS THE ONLY CHANGE I MADE =====
         const imageUrl = event.eventImage;
-        // ===========================================
-        const hasFailedImage = failedImages.has(event._id);
+        const hasValidImage = imageUrl && imageUrl.trim() !== '';
+        const imageState = imageLoadStates[event._id] || { loaded: false, error: false };
 
         return (
           <div 
@@ -203,17 +291,42 @@ const EventRegistration = () => {
               overflow: 'hidden',
               backgroundColor: '#F9FAFB'
             }}>
-              {imageUrl && !hasFailedImage ? (
-                <img
-                  src={imageUrl}
-                  alt={event.name || "Event"}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                  onError={() => handleImageError(event._id)}
-                />
+              {hasValidImage && !imageState.error ? (
+                <>
+                  {/* Shimmer - shows until image loads */}
+                  {!imageState.loaded && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                      zIndex: 1
+                    }}></div>
+                  )}
+                  
+                  {/* Actual image */}
+                  <img
+                    src={imageUrl}
+                    alt={event.name || "Event"}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      opacity: imageState.loaded ? 1 : 0,
+                      transition: 'opacity 0.3s ease-in-out'
+                    }}
+                    onLoad={() => handleImageLoad(event._id)}
+                    onError={() => handleImageError(event._id)}
+                  />
+                  
+                  <style jsx>{`
+                    @keyframes shimmer {
+                      0% { background-position: 200% 0; }
+                      100% { background-position: -200% 0; }
+                    }
+                  `}</style>
+                </>
               ) : (
                 <div style={{
                   width: '100%',
@@ -244,7 +357,8 @@ const EventRegistration = () => {
                 fontWeight: '600',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                fontFamily: "'Orbitron', sans-serif"
+                fontFamily: "'Orbitron', sans-serif",
+                zIndex: 10
               }}>
                 {event.status || 'Upcoming'}
               </div>
