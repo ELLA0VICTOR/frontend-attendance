@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import api, { fileToBase64 } from "@/utils/api";
+import api from "@/utils/api";
 import Header from "@/public/src/components/RegistrationPageComponents/header";
 import Input from "@/public/src/components/RegistrationPageComponents/forminput";
 
@@ -85,25 +85,23 @@ const RegistrationForm = () => {
       return;
     }
 
+    const formData = new FormData();
+    formData.append("fullname", fullname);
+    formData.append("email", email);
+    formData.append("gender", gender);
+    formData.append("phoneNumber", phoneNumber);
+    formData.append("photo", photo);
+    formData.append("eventId", Programid);
+
+    if (matricnumber) formData.append("matricnumber", matricnumber);
+    if (department) formData.append("department", department);
+
     try {
       setLoading(true);
 
-      // ===== BASE64 APPROACH: Convert photo to Base64 and send as JSON =====
-      const base64Photo = await fileToBase64(photo);
-
-      const payload = {
-        name: fullname,
-        email: email,
-        gender: gender,
-        phoneNumber: phoneNumber,
-        photo: base64Photo, // Base64 string
-        eventId: Programid,
-      };
-
-      if (matricnumber) payload.matricNo = matricnumber;
-      if (department) payload.department = department;
-
-      await api.post("/participants/register", payload);
+      await api.post("/participants/register", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       setSuccess("Registration successful! You're all set for the event. Check your email for QR code.");
       setError("");
@@ -134,10 +132,18 @@ const RegistrationForm = () => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#FFFFFF", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      backgroundColor: "#FFFFFF",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    }}>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        * { box-sizing: border-box; }
+        
+        * {
+          box-sizing: border-box;
+        }
+        
         input:focus, select:focus {
           border-color: #6B46C1 !important;
           box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1) !important;
@@ -147,11 +153,35 @@ const RegistrationForm = () => {
       <Header />
 
       {/* Back Button */}
-      <div style={{ maxWidth: "800px", margin: "0 auto", padding: isMobile ? "20px 16px 0" : "32px 48px 0" }}>
-        <button onClick={handleGoBack}
-          style={{ display: "flex", alignItems: "center", gap: "6px", padding: "9px 16px", backgroundColor: "#F8FAFC", color: "#0F172A", border: "1px solid #E2E8F0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600", transition: "all 0.15s ease", letterSpacing: "-0.01em" }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F1F5F9" }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#F8FAFC" }}>
+      <div style={{ 
+        maxWidth: "800px", 
+        margin: "0 auto",
+        padding: isMobile ? "20px 16px 0" : "32px 48px 0"
+      }}>
+        <button 
+          onClick={handleGoBack}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "9px 16px",
+            backgroundColor: "#F8FAFC",
+            color: "#0F172A",
+            border: "1px solid #E2E8F0",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "600",
+            transition: "all 0.15s ease",
+            letterSpacing: "-0.01em"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#F1F5F9"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "#F8FAFC"
+          }}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
@@ -160,22 +190,58 @@ const RegistrationForm = () => {
       </div>
 
       {/* Registration Form */}
-      <div style={{ maxWidth: "800px", margin: isMobile ? "24px auto 40px" : "40px auto 60px", padding: isMobile ? "0 16px" : "0 48px" }}>
-        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "10px", padding: isMobile ? "28px 20px" : "40px 36px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)" }}>
-          
+      <div style={{ 
+        maxWidth: "800px", 
+        margin: isMobile ? "24px auto 40px" : "40px auto 60px",
+        padding: isMobile ? "0 16px" : "0 48px"
+      }}>
+        <div style={{ 
+          backgroundColor: "#FFFFFF", 
+          borderRadius: "10px", 
+          padding: isMobile ? "28px 20px" : "40px 36px",
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)"
+        }}>
           {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "32px", paddingBottom: "24px", borderBottom: "1px solid #E2E8F0" }}>
-            <div style={{ width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#F3F0FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <div style={{ 
+            textAlign: "center",
+            marginBottom: "32px",
+            paddingBottom: "24px",
+            borderBottom: "1px solid #E2E8F0"
+          }}>
+            <div style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              backgroundColor: "#F3F0FF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px"
+            }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B46C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="8.5" cy="7" r="4" />
                 <polyline points="17 11 19 13 23 9" />
               </svg>
             </div>
-            <h1 style={{ fontSize: isMobile ? "22px" : "26px", fontWeight: "700", color: "#0F172A", margin: "0 0 8px 0", letterSpacing: "-0.02em" }}>
+            <h1 style={{ 
+              fontSize: isMobile ? "22px" : "26px", 
+              fontWeight: "700", 
+              color: "#0F172A", 
+              margin: "0 0 8px 0", 
+              letterSpacing: "-0.02em" 
+            }}>
               Event Registration
             </h1>
-            <p style={{ color: "#64748B", fontSize: "14px", margin: 0, fontWeight: "500", letterSpacing: "-0.01em", lineHeight: "1.5" }}>
+            <p style={{ 
+              color: "#64748B", 
+              fontSize: "14px", 
+              margin: 0, 
+              fontWeight: "500",
+              letterSpacing: "-0.01em",
+              lineHeight: "1.5"
+            }}>
               Please fill in your details to register for this event
             </p>
           </div>
@@ -183,27 +249,76 @@ const RegistrationForm = () => {
           <form onSubmit={handleSubmit}>
             {/* Participant Type Selection */}
             <div style={{ marginBottom: "24px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "10px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "10px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
                 I am registering as <span style={{ color: "#DC2626" }}>*</span>
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
-                <button type="button" onClick={() => setParticipantType("student")}
-                  style={{ padding: "14px", border: participantType === "student" ? "2px solid #6B46C1" : "2px solid #E2E8F0", borderRadius: "8px", backgroundColor: participantType === "student" ? "#F3F0FF" : "#FFFFFF", cursor: "pointer", transition: "all 0.2s ease", textAlign: "left" }}>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                gap: "12px" 
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setParticipantType("student")}
+                  style={{
+                    padding: "14px",
+                    border: participantType === "student" ? "2px solid #6B46C1" : "2px solid #E2E8F0",
+                    borderRadius: "8px",
+                    backgroundColor: participantType === "student" ? "#F3F0FF" : "#FFFFFF",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left"
+                  }}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: participantType === "student" ? "5px solid #6B46C1" : "2px solid #CBD5E1", transition: "all 0.2s ease" }}></div>
+                    <div style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      border: participantType === "student" ? "5px solid #6B46C1" : "2px solid #CBD5E1",
+                      transition: "all 0.2s ease"
+                    }}></div>
                     <div>
                       <div style={{ fontSize: "14px", fontWeight: "600", color: "#0F172A" }}>Student</div>
-                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>With matric number & department</div>
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                        With matric number & department
+                      </div>
                     </div>
                   </div>
                 </button>
-                <button type="button" onClick={() => setParticipantType("non-student")}
-                  style={{ padding: "14px", border: participantType === "non-student" ? "2px solid #6B46C1" : "2px solid #E2E8F0", borderRadius: "8px", backgroundColor: participantType === "non-student" ? "#F3F0FF" : "#FFFFFF", cursor: "pointer", transition: "all 0.2s ease", textAlign: "left" }}>
+                <button
+                  type="button"
+                  onClick={() => setParticipantType("non-student")}
+                  style={{
+                    padding: "14px",
+                    border: participantType === "non-student" ? "2px solid #6B46C1" : "2px solid #E2E8F0",
+                    borderRadius: "8px",
+                    backgroundColor: participantType === "non-student" ? "#F3F0FF" : "#FFFFFF",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    textAlign: "left"
+                  }}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: participantType === "non-student" ? "5px solid #6B46C1" : "2px solid #CBD5E1", transition: "all 0.2s ease" }}></div>
+                    <div style={{
+                      width: "18px",
+                      height: "18px",
+                      borderRadius: "50%",
+                      border: participantType === "non-student" ? "5px solid #6B46C1" : "2px solid #CBD5E1",
+                      transition: "all 0.2s ease"
+                    }}></div>
                     <div>
                       <div style={{ fontSize: "14px", fontWeight: "600", color: "#0F172A" }}>General Public</div>
-                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>Non-student registration</div>
+                      <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                        Non-student registration
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -212,71 +327,209 @@ const RegistrationForm = () => {
 
             {/* Full Name */}
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "8px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
                 Full Name <span style={{ color: "#DC2626" }}>*</span>
               </label>
-              <Input type="text" label="" value={fullname} setValue={setFullname} placeholder="Enter your full name" />
+              <Input 
+                type="text" 
+                label="" 
+                value={fullname} 
+                setValue={setFullname}
+                placeholder="Enter your full name"
+              />
             </div>
 
-            {/* Conditional Fields */}
+            {/* Conditional Fields Based on Type */}
             {participantType === "student" ? (
               <>
-                {/* Matric & Email */}
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+                {/* Matric Number & Email */}
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
+                }}>
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Matric Number <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="text" label="" value={matricnumber} setValue={setMatricnumber} placeholder="e.g., 2020/1/12345" />
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={matricnumber} 
+                      setValue={setMatricnumber}
+                      placeholder="e.g., 2020/1/12345"
+                    />
                   </div>
+
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Email Address <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="email" label="" value={email} setValue={setEmail} placeholder="your.email@example.com" />
+                    <Input 
+                      type="email" 
+                      label="" 
+                      value={email} 
+                      setValue={setEmail}
+                      placeholder="your.email@example.com"
+                    />
                   </div>
                 </div>
+
                 {/* Department & Phone */}
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
+                }}>
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Department <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="text" label="" value={department} setValue={setDepartment} placeholder="e.g., Computer Science" />
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={department} 
+                      setValue={setDepartment}
+                      placeholder="e.g., Computer Science"
+                    />
                   </div>
+
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Phone Number <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="tel" label="" value={phoneNumber} setValue={setPhoneNumber} placeholder="+2348012345678" />
+                    <Input 
+                      type="tel" 
+                      label="" 
+                      value={phoneNumber} 
+                      setValue={setPhoneNumber}
+                      placeholder="+2348012345678"
+                    />
                   </div>
                 </div>
               </>
             ) : (
               <>
                 {/* Email & Phone for Non-Students */}
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                  gap: "20px", 
+                  marginBottom: "20px" 
+                }}>
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Email Address <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="email" label="" value={email} setValue={setEmail} placeholder="your.email@example.com" />
+                    <Input 
+                      type="email" 
+                      label="" 
+                      value={email} 
+                      setValue={setEmail}
+                      placeholder="your.email@example.com"
+                    />
                   </div>
+
                   <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+                    <label style={{ 
+                      display: "block", 
+                      fontSize: "13px", 
+                      fontWeight: "600", 
+                      marginBottom: "8px", 
+                      color: "#0F172A", 
+                      letterSpacing: "-0.01em" 
+                    }}>
                       Phone Number <span style={{ color: "#DC2626" }}>*</span>
                     </label>
-                    <Input type="tel" label="" value={phoneNumber} setValue={setPhoneNumber} placeholder="+2348012345678" />
+                    <Input 
+                      type="tel" 
+                      label="" 
+                      value={phoneNumber} 
+                      setValue={setPhoneNumber}
+                      placeholder="+2348012345678"
+                    />
                   </div>
                 </div>
-                {/* Optional Fields */}
-                <div style={{ padding: "14px", backgroundColor: "#F8FAFC", borderRadius: "6px", marginBottom: "20px", border: "1px solid #E2E8F0" }}>
-                  <p style={{ fontSize: "12px", color: "#64748B", margin: "0 0 10px 0", fontWeight: "500" }}>
+
+                {/* Optional Student Fields */}
+                <div style={{
+                  padding: "14px",
+                  backgroundColor: "#F8FAFC",
+                  borderRadius: "6px",
+                  marginBottom: "20px",
+                  border: "1px solid #E2E8F0"
+                }}>
+                  <p style={{ 
+                    fontSize: "12px", 
+                    color: "#64748B", 
+                    margin: "0 0 10px 0",
+                    fontWeight: "500"
+                  }}>
                     Optional: If you are a student, you can provide these details
                   </p>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "14px" }}>
-                    <Input type="text" label="" value={matricnumber} setValue={setMatricnumber} placeholder="Matric Number (optional)" />
-                    <Input type="text" label="" value={department} setValue={setDepartment} placeholder="Department (optional)" />
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+                    gap: "14px"
+                  }}>
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={matricnumber} 
+                      setValue={setMatricnumber}
+                      placeholder="Matric Number (optional)"
+                    />
+                    <Input 
+                      type="text" 
+                      label="" 
+                      value={department} 
+                      setValue={setDepartment}
+                      placeholder="Department (optional)"
+                    />
                   </div>
                 </div>
               </>
@@ -284,11 +537,35 @@ const RegistrationForm = () => {
 
             {/* Gender */}
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "8px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
                 Gender <span style={{ color: "#DC2626" }}>*</span>
               </label>
-              <select value={gender} onChange={(e) => setGender(e.target.value)} required
-                style={{ width: "100%", padding: "10px 14px", border: "1px solid #E2E8F0", borderRadius: "6px", fontSize: "13px", outline: "none", backgroundColor: "#FFFFFF", fontFamily: "inherit", color: gender ? "#0F172A" : "#94A3B8", fontWeight: "500", transition: "all 0.15s ease", cursor: "pointer" }}>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  outline: "none",
+                  backgroundColor: "#FFFFFF",
+                  fontFamily: "inherit",
+                  color: gender ? "#0F172A" : "#94A3B8",
+                  fontWeight: "500",
+                  transition: "all 0.15s ease",
+                  cursor: "pointer"
+                }}
+              >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -297,61 +574,200 @@ const RegistrationForm = () => {
 
             {/* Photo Upload */}
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "#0F172A", letterSpacing: "-0.01em" }}>
+              <label style={{ 
+                display: "block", 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                marginBottom: "8px", 
+                color: "#0F172A", 
+                letterSpacing: "-0.01em" 
+              }}>
                 Passport Photograph <span style={{ color: "#DC2626" }}>*</span>
               </label>
               
-              <div style={{ border: "2px dashed #E2E8F0", borderRadius: "6px", padding: isMobile ? "24px 16px" : "32px 24px", textAlign: "center", backgroundColor: "#F8FAFC", transition: "all 0.15s ease", cursor: "pointer" }}
-                onMouseEnter={(e) => { if (!photoPreview) { e.currentTarget.style.borderColor = "#6B46C1"; e.currentTarget.style.backgroundColor = "#F3F0FF" } }}
-                onMouseLeave={(e) => { if (!photoPreview) { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.backgroundColor = "#F8FAFC" } }}>
+              <div style={{
+                border: "2px dashed #E2E8F0",
+                borderRadius: "6px",
+                padding: isMobile ? "24px 16px" : "32px 24px",
+                textAlign: "center",
+                backgroundColor: "#F8FAFC",
+                transition: "all 0.15s ease",
+                cursor: "pointer"
+              }}
+              onMouseEnter={(e) => {
+                if (!photoPreview) {
+                  e.currentTarget.style.borderColor = "#6B46C1"
+                  e.currentTarget.style.backgroundColor = "#F3F0FF"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!photoPreview) {
+                  e.currentTarget.style.borderColor = "#E2E8F0"
+                  e.currentTarget.style.backgroundColor = "#F8FAFC"
+                }
+              }}>
                 {photoPreview ? (
                   <div style={{ position: "relative" }}>
-                    <img src={photoPreview} alt="Preview" style={{ maxWidth: "200px", width: "100%", height: "auto", borderRadius: "6px", border: "2px solid #6B46C1", margin: "0 auto 12px", display: "block" }} />
-                    <button type="button" onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                      style={{ padding: "6px 12px", backgroundColor: "#DC2626", color: "#FFFFFF", border: "none", borderRadius: "4px", fontSize: "12px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s ease" }}
+                    <img 
+                      src={photoPreview} 
+                      alt="Preview" 
+                      style={{ 
+                        maxWidth: "200px", 
+                        width: "100%",
+                        height: "auto", 
+                        borderRadius: "6px",
+                        border: "2px solid #6B46C1",
+                        margin: "0 auto 12px",
+                        display: "block"
+                      }} 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhoto(null);
+                        setPhotoPreview(null);
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#DC2626",
+                        color: "#FFFFFF",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease"
+                      }}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#B91C1C"}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#DC2626"}>
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#DC2626"}
+                    >
                       Remove Photo
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: "#E0E7FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                    <div style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#E0E7FF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 12px"
+                    }}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B46C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                       </svg>
                     </div>
-                    <p style={{ fontSize: "14px", fontWeight: "600", color: "#0F172A", margin: "0 0 6px 0", letterSpacing: "-0.01em" }}>
+                    <p style={{ 
+                      fontSize: "14px", 
+                      fontWeight: "600", 
+                      color: "#0F172A", 
+                      margin: "0 0 6px 0",
+                      letterSpacing: "-0.01em"
+                    }}>
                       Click to upload or drag and drop
                     </p>
-                    <p style={{ fontSize: "12px", color: "#64748B", margin: 0, fontWeight: "500" }}>
+                    <p style={{ 
+                      fontSize: "12px", 
+                      color: "#64748B", 
+                      margin: 0,
+                      fontWeight: "500"
+                    }}>
                       PNG, JPG or JPEG (max. 5MB)
                     </p>
                   </>
                 )}
-                <input type="file" accept="image/*" onChange={handlePhotoChange} required
-                  style={{ position: "absolute", width: "1px", height: "1px", opacity: 0, overflow: "hidden" }} id="photo-upload" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  required
+                  style={{
+                    position: "absolute",
+                    width: "1px",
+                    height: "1px",
+                    opacity: 0,
+                    overflow: "hidden"
+                  }}
+                  id="photo-upload"
+                />
               </div>
-              <label htmlFor="photo-upload" style={{ display: photoPreview ? "none" : "block", marginTop: "12px", textAlign: "center", cursor: "pointer" }}>
-                <span style={{ display: "inline-block", padding: "8px 16px", backgroundColor: "#6B46C1", color: "#FFFFFF", borderRadius: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.15s ease" }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#5B3BA1"}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#6B46C1"}>
+              <label 
+                htmlFor="photo-upload"
+                style={{
+                  display: photoPreview ? "none" : "block",
+                  marginTop: "12px",
+                  textAlign: "center",
+                  cursor: "pointer"
+                }}
+              >
+                <span style={{
+                  display: "inline-block",
+                  padding: "8px 16px",
+                  backgroundColor: "#6B46C1",
+                  color: "#FFFFFF",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  transition: "all 0.15s ease"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#5B3BA1"}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#6B46C1"}>
                   Choose File
                 </span>
               </label>
             </div>
 
             {/* Submit Button */}
-            <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "24px", marginTop: "28px", textAlign: "center" }}>
-              <button type="submit" disabled={loading}
-                style={{ width: isMobile ? "100%" : "auto", minWidth: isMobile ? "auto" : "200px", padding: "12px 28px", backgroundColor: loading ? "#94A3B8" : "#6B46C1", color: "#FFFFFF", border: "none", borderRadius: "6px", fontSize: "14px", fontWeight: "600", cursor: loading ? "not-allowed" : "pointer", transition: "all 0.15s ease", letterSpacing: "-0.01em", boxShadow: loading ? "none" : "0 1px 3px rgba(107, 70, 193, 0.3)", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
-                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = "#5B3BA1" }}
-                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = "#6B46C1" }}>
+            <div style={{ 
+              borderTop: "1px solid #E2E8F0", 
+              paddingTop: "24px", 
+              marginTop: "28px",
+              textAlign: "center"
+            }}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: isMobile ? "100%" : "auto",
+                  minWidth: isMobile ? "auto" : "200px",
+                  padding: "12px 28px",
+                  backgroundColor: loading ? "#94A3B8" : "#6B46C1",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  transition: "all 0.15s ease",
+                  letterSpacing: "-0.01em",
+                  boxShadow: loading ? "none" : "0 1px 3px rgba(107, 70, 193, 0.3)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) e.currentTarget.style.backgroundColor = "#5B3BA1"
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) e.currentTarget.style.backgroundColor = "#6B46C1"
+                }}
+              >
                 {loading ? (
                   <>
-                    <div style={{ width: "16px", height: "16px", border: "2px solid #FFFFFF", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }}></div>
+                    <div style={{ 
+                      width: "16px", 
+                      height: "16px", 
+                      border: "2px solid #FFFFFF", 
+                      borderTop: "2px solid transparent", 
+                      borderRadius: "50%", 
+                      animation: "spin 0.6s linear infinite" 
+                    }}></div>
                     Please wait...
                   </>
                 ) : (
@@ -367,9 +783,22 @@ const RegistrationForm = () => {
             </div>
           </form>
 
-          {/* Messages */}
+          {/* Error Message */}
           {error && (
-            <div style={{ marginTop: "20px", padding: "12px 16px", backgroundColor: "#FEF2F2", color: "#DC2626", borderRadius: "6px", fontSize: "13px", border: "1px solid #FEE2E2", fontWeight: "600", letterSpacing: "-0.01em", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+            <div style={{
+              marginTop: "20px",
+              padding: "12px 16px",
+              backgroundColor: "#FEF2F2",
+              color: "#DC2626",
+              borderRadius: "6px",
+              fontSize: "13px",
+              border: "1px solid #FEE2E2",
+              fontWeight: "600",
+              letterSpacing: "-0.01em",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px"
+            }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "2px" }}>
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -378,8 +807,22 @@ const RegistrationForm = () => {
               <span>{error}</span>
             </div>
           )}
+          {/* Success Message */}
           {success && (
-            <div style={{ marginTop: "20px", padding: "12px 16px", backgroundColor: "#F0FDF4", color: "#059669", borderRadius: "6px", fontSize: "13px", border: "1px solid #BBF7D0", fontWeight: "600", letterSpacing: "-0.01em", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+            <div style={{
+              marginTop: "20px",
+              padding: "12px 16px",
+              backgroundColor: "#F0FDF4",
+              color: "#059669",
+              borderRadius: "6px",
+              fontSize: "13px",
+              border: "1px solid #BBF7D0",
+              fontWeight: "600",
+              letterSpacing: "-0.01em",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px"
+            }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "2px" }}>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -399,13 +842,34 @@ const RegistrationForm = () => {
   );
 };
 
-// Main component with Suspense
+// Main component that wraps the form in Suspense
 const Registration = () => {
   return (
     <Suspense fallback={
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#FFFFFF', fontFamily: "'Inter', sans-serif" }}>
-        <div style={{ width: "40px", height: "40px", border: "3px solid #E2E8F0", borderTop: "3px solid #6B46C1", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: "16px" }}></div>
-        <p style={{ fontSize: '14px', color: '#64748B', fontWeight: '600', letterSpacing: '-0.01em' }}>
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        backgroundColor: '#FFFFFF',
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        <div style={{ 
+          width: "40px", 
+          height: "40px", 
+          border: "3px solid #E2E8F0", 
+          borderTop: "3px solid #6B46C1", 
+          borderRadius: "50%", 
+          animation: "spin 0.8s linear infinite",
+          marginBottom: "16px"
+        }}></div>
+        <p style={{ 
+          fontSize: '14px',
+          color: '#64748B',
+          fontWeight: '600',
+          letterSpacing: '-0.01em'
+        }}>
           Loading registration form...
         </p>
         <style jsx>{`

@@ -242,24 +242,6 @@ const Attendance = () => {
     setExistingAttendance(null)
   }
 
-  const handleMarkAllPresent = async () => {
-    if (!selectedEventId) return
-    
-    setLoading(true)
-    try {
-      await api.post(`/attendance/mark-all-present/${selectedEventId}`)
-      setSuccess("All participants marked as present")
-      setTimeout(() => setSuccess(""), 3000)
-      await fetchEventData()
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || "Failed to mark all present"
-      setError(errorMsg)
-      setTimeout(() => setError(""), 4000)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleViewReport = () => {
     if (selectedEventId) {
       Navigation.push(`/AttendanceReport/${selectedEventId}`)
@@ -505,31 +487,6 @@ const Attendance = () => {
                   }}
                 />
               </div>
-
-              <button
-                onClick={handleMarkAllPresent}
-                disabled={!selectedEventId || loading}
-                style={{
-                  padding: "9px 16px",
-                  backgroundColor: !selectedEventId ? "#F1F5F9" : "#6B46C1",
-                  color: !selectedEventId ? "#94A3B8" : "#FFFFFF",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  cursor: !selectedEventId || loading ? "not-allowed" : "pointer",
-                  transition: "all 0.15s ease",
-                  letterSpacing: "-0.01em"
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedEventId && !loading) e.currentTarget.style.backgroundColor = "#5B3BA1"
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedEventId && !loading) e.currentTarget.style.backgroundColor = "#6B46C1"
-                }}
-              >
-                Mark All
-              </button>
 
               <button
                 onClick={handleViewReport}

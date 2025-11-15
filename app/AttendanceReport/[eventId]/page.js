@@ -1,7 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Image from "next/image"
 import api from "@/utils/api"
 import { isAuthenticated, isAdmin, logout } from "@/utils/auth"
 import Header from "@/public/src/components/AddEventPageComponents/header"
@@ -56,29 +55,46 @@ const AttendanceReport = () => {
   const handleDownloadCSV = () => {
     if (!report || !report.attendanceRecords) return
 
-    const headers = ["Event Name", "Track", "Participant Name", "Matric No", "Status", "Date", "Scanned At", "Reason"]
+    // CSV Headers - COMPLETE multi-day tracking
+    const headers = [
+      "Event Name",
+      "Track", 
+      "Participant Name",
+      "Phone Number",
+      "Matric No",
+      "Department",
+      "Date",
+      "Status",
+      "Scanned At",
+      "Reason"
+    ]
     
+    // Map filtered records to CSV rows
     const rows = filteredRecords.map(record => [
-      record.eventName,
-      record.track,
-      record.participantName,
-      record.matricNo,
-      record.status,
-      record.date,
+      record.eventName || "",
+      record.track || "N/A",
+      record.participantName || "",
+      record.phoneNumber || "N/A",
+      record.matricNo || "N/A",
+      record.department || "N/A",
+      record.date || "",
+      record.status || "",
       record.scannedAt ? new Date(record.scannedAt).toLocaleString() : "N/A",
       record.reason || ""
     ])
 
+    // Build CSV content
     const csvContent = [
       headers.join(","),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
     ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
+    // Trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${event?.name || "event"}_attendance_${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `${event?.name || "event"}_complete_attendance_${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -155,7 +171,7 @@ const AttendanceReport = () => {
     return true
   }) || []
 
-  const uniqueDates = [...new Set(report?.attendanceRecords?.map(r => r.date) || [])]
+  const uniqueDates = [...new Set(report?.attendanceRecords?.map(r => r.date) || [])].sort()
   const uniqueTracks = [...new Set(report?.attendanceRecords?.map(r => r.track) || [])]
 
   return (
@@ -178,7 +194,7 @@ const AttendanceReport = () => {
               Attendance Report
             </h1>
             <p style={{ color: "#64748B", fontSize: isMobile ? "13px" : "13px", margin: 0, fontWeight: "500", letterSpacing: "-0.01em" }}>
-              {event?.name}
+              {event?.name} {report?.event?.totalDays && `(${report.event.totalDays} days tracked)`}
             </p>
           </div>
           <button 
@@ -278,7 +294,7 @@ const AttendanceReport = () => {
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download CSV
+            Download Complete CSV ({filteredRecords.length} records)
           </button>
         </div>
 
@@ -299,6 +315,34 @@ const AttendanceReport = () => {
             </div>
           ))}
         </div>
+
+        {report?.event?.totalDays > 1 && (
+          <div style={{ 
+            backgroundColor: "#FFFFFF", 
+            border: "1px solid #BFDBFE", 
+            borderRadius: "8px", 
+            padding: "16px", 
+            marginBottom: "28px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: "600", color: "#000000", margin: "0 0 4px 0" }}>
+                Multi-Day Event Tracking Active
+              </p>
+              <p style={{ fontSize: "12px", color: "#000000", margin: 0 }}>
+                This report includes attendance for all {report.event.totalDays} days from {new Date(report.event.eventStartDate).toLocaleDateString()} to present. 
+                Late registrants are marked absent for days before their registration.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "10px", padding: isMobile ? "20px" : "28px", marginBottom: "20px", border: "1px solid #E2E8F0", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)" }}>
           <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "20px", color: "#0F172A", letterSpacing: "-0.01em" }}>
@@ -353,7 +397,7 @@ const AttendanceReport = () => {
                   fontWeight: "500"
                 }}
               >
-                <option value="">All Dates</option>
+                <option value="">All Dates ({uniqueDates.length} days)</option>
                 {uniqueDates.map(date => (
                   <option key={date} value={date}>
                     {new Date(date).toLocaleDateString()}
@@ -424,7 +468,7 @@ const AttendanceReport = () => {
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #E2E8F0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)" }}>
           <div style={{ padding: isMobile ? "20px" : "24px 28px 20px", borderBottom: "1px solid #E2E8F0" }}>
             <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#0F172A", letterSpacing: "-0.01em", margin: 0 }}>
-              Attendance Records ({filteredRecords.length})
+              Attendance Records ({filteredRecords.length} of {report?.attendanceRecords?.length || 0})
             </h3>
           </div>
 
@@ -441,10 +485,13 @@ const AttendanceReport = () => {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {filteredRecords.map((record, index) => (
-                    <div key={index} style={{ padding: "12px", border: "1px solid #E2E8F0", borderRadius: "6px", backgroundColor: "#F8FAFC" }}>
+                    <div key={index} style={{ padding: "12px", border: "1px solid #E2E8F0", borderRadius: "6px", backgroundColor: record.reason === "Not registered yet" ? "#FEF3C7" : "#F8FAFC" }}>
                       <div style={{ marginBottom: "8px" }}>
                         <div style={{ fontSize: "14px", color: "#0F172A", fontWeight: "600", marginBottom: "4px", letterSpacing: "-0.01em" }}>
                           {record.participantName}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "2px" }}>
+                          {record.phoneNumber}
                         </div>
                         <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "2px" }}>
                           {record.matricNo}
@@ -456,7 +503,7 @@ const AttendanceReport = () => {
                           {new Date(record.date).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                         <span style={{
                           padding: "4px 12px",
                           backgroundColor: record.status === "Present" ? "#D1FAE5" : "#FEE2E2",
@@ -469,9 +516,11 @@ const AttendanceReport = () => {
                         }}>
                           {record.status}
                         </span>
-                        <div style={{ fontSize: "11px", color: "#64748B", fontWeight: "500" }}>
-                          {record.scannedAt ? new Date(record.scannedAt).toLocaleTimeString() : "Not scanned"}
-                        </div>
+                        {record.reason && (
+                          <span style={{ fontSize: "11px", color: "#78716C", fontStyle: "italic" }}>
+                            {record.reason}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -487,6 +536,9 @@ const AttendanceReport = () => {
                       Name
                     </th>
                     <th style={{ padding: "12px 20px", textAlign: "left", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Phone
+                    </th>
+                    <th style={{ padding: "12px 20px", textAlign: "left", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Matric No
                     </th>
                     <th style={{ padding: "12px 20px", textAlign: "left", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -499,22 +551,31 @@ const AttendanceReport = () => {
                       Status
                     </th>
                     <th style={{ padding: "12px 20px", textAlign: "left", fontSize: "11px", fontWeight: "700", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Scanned At
+                      Notes
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRecords.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ padding: "40px", textAlign: "center", color: "#94A3B8", fontSize: "13px", fontWeight: "600" }}>
+                      <td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "#94A3B8", fontSize: "13px", fontWeight: "600" }}>
                         No records found
                       </td>
                     </tr>
                   ) : (
                     filteredRecords.map((record, index) => (
-                      <tr key={index} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                      <tr 
+                        key={index} 
+                        style={{ 
+                          borderBottom: "1px solid #F1F5F9",
+                          backgroundColor: record.reason === "Not registered yet" ? "#FFFBEB" : "#FFFFFF"
+                        }}
+                      >
                         <td style={{ padding: "14px 20px", fontSize: "13px", color: "#0F172A", fontWeight: "600", letterSpacing: "-0.01em" }}>
                           {record.participantName}
+                        </td>
+                        <td style={{ padding: "14px 20px", fontSize: "13px", color: "#64748B", fontWeight: "500" }}>
+                          {record.phoneNumber}
                         </td>
                         <td style={{ padding: "14px 20px", fontSize: "13px", color: "#64748B", fontWeight: "500" }}>
                           {record.matricNo}
@@ -539,8 +600,10 @@ const AttendanceReport = () => {
                             {record.status}
                           </span>
                         </td>
-                        <td style={{ padding: "14px 20px", fontSize: "13px", color: "#64748B", fontWeight: "500" }}>
-                          {record.scannedAt ? new Date(record.scannedAt).toLocaleString() : record.reason || "Not scanned"}
+                        <td style={{ padding: "14px 20px", fontSize: "12px", color: "#78716C", fontStyle: record.reason ? "italic" : "normal", fontWeight: "500" }}>
+                          {record.scannedAt 
+                            ? new Date(record.scannedAt).toLocaleTimeString() 
+                            : record.reason || "—"}
                         </td>
                       </tr>
                     ))
