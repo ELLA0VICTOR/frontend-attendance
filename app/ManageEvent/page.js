@@ -1,7 +1,6 @@
 "use client"
 import { useState, useContext, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import api from "@/utils/api"
 import { isAuthenticated, isAdmin, logout, isSuperAdmin } from "@/utils/auth"
 import Header from "@/public/src/components/AddEventPageComponents/header"
@@ -62,15 +61,14 @@ const ManageEvent = () => {
   const handleEdit = (event) => {
     setSelectedEvent(event)
     setEditForm({
-      name: event.name,
-      description: event.description,
+      name: event.name || "",
+      description: event.description || "",
       startDate: event.startDate?.split('T')[0] || "",
       endDate: event.endDate?.split('T')[0] || "",
       duration: event.duration || "",
-      location: event.location,
+      location: event.location || "",
       maxParticipants: event.maxParticipants || "",
       selectedTrack: event.selectedTrack || "",
-      imageUrl: event.imageUrl || "",
     })
     setEditModal(true)
   }
@@ -80,7 +78,43 @@ const ManageEvent = () => {
     
     setActionLoading(prev => ({ ...prev, [selectedEvent._id]: true }))
     try {
-      const response = await api.put(`/events/${selectedEvent._id}`, editForm)
+      // Build the update payload - only send fields that have values
+      const updatePayload = {}
+      
+      if (editForm.name && editForm.name.trim()) {
+        updatePayload.name = editForm.name.trim()
+      }
+      
+      if (editForm.description !== undefined) {
+        updatePayload.description = editForm.description.trim()
+      }
+      
+      if (editForm.startDate) {
+        updatePayload.startDate = editForm.startDate
+      }
+      
+      if (editForm.endDate) {
+        updatePayload.endDate = editForm.endDate
+      }
+      
+      if (editForm.duration && editForm.duration !== "") {
+        updatePayload.duration = parseInt(editForm.duration)
+      }
+      
+      if (editForm.location && editForm.location.trim()) {
+        updatePayload.location = editForm.location.trim()
+      }
+      
+      if (editForm.maxParticipants && editForm.maxParticipants !== "") {
+        updatePayload.maxParticipants = parseInt(editForm.maxParticipants)
+      }
+      
+      // Handle selectedTrack - send empty string if cleared, otherwise send the value
+      if (editForm.selectedTrack !== undefined) {
+        updatePayload.selectedTrack = editForm.selectedTrack || null
+      }
+
+      const response = await api.put(`/events/${selectedEvent._id}`, updatePayload)
       
       setEvents(prev => prev.map(e => 
         e._id === selectedEvent._id ? response.data.data.event : e
@@ -91,7 +125,7 @@ const ManageEvent = () => {
       setEditModal(false)
       setSelectedEvent(null)
     } catch (err) {
-      const errorMsg = err.response?.data?.message || "Failed to update event"
+      const errorMsg = err.response?.data?.message || err.response?.data?.errors?.[0]?.message || "Failed to update event"
       setError(errorMsg)
       setTimeout(() => setError(""), 4000)
     } finally {
